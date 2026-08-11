@@ -59,11 +59,11 @@ class ForegroundService : Service() {
                     outagesCache = it
                 }
             } catch (error: BillIDNotFoundException) {
-                updateNotification(outagesCache, "Update Error : Unknown Bill ID\n")
+                updateNotification(outagesCache, getString(R.string.notification_update_error_unknown_bill_id))
             } catch (error: BillIDNot13Chars) {
-                updateNotification(outagesCache, "Update Error : Unknown Bill ID\n")
+                updateNotification(outagesCache, getString(R.string.notification_update_error_unknown_bill_id))
             } catch (error: RequestUnsuccessful) {
-                updateNotification(outagesCache, "Update Error : Connection Problem\n")
+                updateNotification(outagesCache, getString(R.string.notification_update_error_connection_problem))
             }
         }
     }
@@ -99,12 +99,12 @@ class ForegroundService : Service() {
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                channelId, "Blackout Checker", NotificationManager.IMPORTANCE_LOW
+                channelId, getString(R.string.notification_channel_blackout_checker), NotificationManager.IMPORTANCE_LOW
             )
             getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
         }
-        return NotificationCompat.Builder(this, channelId).setContentTitle("Monitoring Blackout Schedules ...")
-            .setContentText("Service is running ...").setSilent(true)
+        return NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.notification_monitoring_title))
+            .setContentText(getString(R.string.notification_service_running)).setSilent(true)
             .addAction(R.drawable.ic_renew, getString(R.string.refresh), refreshIntent)
             .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()
     }
@@ -117,11 +117,16 @@ class ForegroundService : Service() {
             content += messages.random()
         }
         for (schedule in schedules) {
-            content += "${schedule.date} : From ${schedule.startTime} to ${schedule.endTime}\n"
+            content += getString(
+                R.string.notification_schedule_line,
+                schedule.date,
+                schedule.startTime,
+                schedule.endTime
+            )
         }
         notificationManager.notify(
             1,
-            NotificationCompat.Builder(this, channelId).setContentTitle("Monitoring Blackout Schedules ...")
+            NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.notification_monitoring_title))
                 .setContentText(content).setSilent(true)
                 .addAction(R.drawable.ic_renew, getString(R.string.refresh), refreshIntent)
                 .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()

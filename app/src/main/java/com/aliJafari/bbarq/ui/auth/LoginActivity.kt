@@ -3,14 +3,12 @@ package com.aliJafari.bbarq.ui.auth
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -22,10 +20,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,10 +27,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.ui.auth.viewmodel.LoginUiState
 import com.aliJafari.bbarq.ui.auth.viewmodel.LoginViewModel
+import com.aliJafari.bbarq.ui.theme.BBarqTheme
 
 
 class LoginActivity : ComponentActivity() {
@@ -47,19 +44,7 @@ class LoginActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            isSystemInDarkTheme()
-            val darkTheme = isSystemInDarkTheme()
-            val colorScheme = when {
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                    if (darkTheme) dynamicDarkColorScheme(this)
-                    else dynamicLightColorScheme(this)
-                }
-                else -> {
-                    if (darkTheme) darkColorScheme()
-                    else lightColorScheme()
-                }
-            }
-            MaterialTheme(colorScheme = colorScheme) {
+            BBarqTheme {
                 LoginScreen(vm, this)
             }
         }
@@ -82,20 +67,20 @@ fun LoginScreen(vm: LoginViewModel, context: Context) {
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Phone", color = MaterialTheme.colorScheme.primary) })
+                    label = { Text(stringResource(R.string.login_phone), color = MaterialTheme.colorScheme.primary) })
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = { vm.sendOtp(phone) }) { Text("Send Code") }
+                Button(onClick = { vm.sendOtp(phone) }) { Text(stringResource(R.string.login_send_code)) }
                 Spacer(Modifier.height(12.dp))
-                Text("ATTENTION : Logging into Bargheman.com", color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.login_attention), color = MaterialTheme.colorScheme.error)
             }
 
             is LoginUiState.EnterCode -> {
                 OutlinedTextField(
                     value = code,
                     onValueChange = { code = it },
-                    label = { Text("SMS Code", color = MaterialTheme.colorScheme.primary) })
+                    label = { Text(stringResource(R.string.login_sms_code), color = MaterialTheme.colorScheme.primary) })
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = { vm.verifyOtp(context, code) }) { Text("Verify Code") }
+                Button(onClick = { vm.verifyOtp(context, code) }) { Text(stringResource(R.string.login_verify_code)) }
             }
 
             is LoginUiState.Loading -> {
@@ -107,7 +92,13 @@ fun LoginScreen(vm: LoginViewModel, context: Context) {
             }
 
             is LoginUiState.Success -> {
-                Text("Login successful. Token: ${(state as LoginUiState.Success).token.take(20)}...", color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    stringResource(
+                        R.string.login_success_token,
+                        (state as LoginUiState.Success).token.take(20)
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.height(12.dp))
                 Button(onClick = {
                     val i: Intent = context.getPackageManager()
@@ -116,7 +107,7 @@ fun LoginScreen(vm: LoginViewModel, context: Context) {
                     i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(i)
                     System.exit(0)
-                }) { Text("Restart App") }
+                }) { Text(stringResource(R.string.login_restart_app)) }
             }
         }
     }
@@ -134,6 +125,6 @@ fun Test(){
         OutlinedTextField(
             value = "",
             onValueChange = {  },
-            label = { Text("Phone", color = MaterialTheme.colorScheme.onSurface) })
+            label = { Text(stringResource(R.string.login_phone), color = MaterialTheme.colorScheme.onSurface) })
     }
 }

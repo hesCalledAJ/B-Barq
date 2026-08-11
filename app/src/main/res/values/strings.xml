@@ -66,4 +66,20 @@
     <string name="field_error_invalid_id_count">Must be 13 chars long</string>
     <string name="action_logout">Logout</string>
     <string name="notification_permission_sub">Please allow the app to send notifications.</string>
+    <string name="menu_more">More</string>
+    <string name="value_not_available">-</string>
+    <string name="network_request_failed">Network Request Failed</string>
+    <string name="login_phone">Phone</string>
+    <string name="login_send_code">Send Code</string>
+    <string name="login_attention">ATTENTION : Logging into Bargheman.com</string>
+    <string name="login_sms_code">SMS Code</string>
+    <string name="login_verify_code">Verify Code</string>
+    <string name="login_success_token">Login successful. Token: %1$s...</string>
+    <string name="login_restart_app">Restart App</string>
+    <string name="notification_channel_blackout_checker">Blackout Checker</string>
+    <string name="notification_monitoring_title">Monitoring Blackout Schedules ...</string>
+    <string name="notification_service_running">Service is running ...</string>
+    <string name="notification_update_error_unknown_bill_id">Update Error : Unknown Bill ID\n</string>
+    <string name="notification_update_error_connection_problem">Update Error : Connection Problem\n</string>
+    <string name="notification_schedule_line">%1$s : From %2$s to %3$s\n</string>
 </resources>
