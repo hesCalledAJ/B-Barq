@@ -26,7 +26,7 @@
     <string name="action_logout_tip">کارامد برای خطاهای ناشی از منقضی شدن توکن</string>
     <string name="notification_permission_sub">لطفاً اجازه ارسال اعلان به برنامه را بدهید.</string>
     <string name="menu_more">بیشتر</string>
-    <string name="value_not_available">-</string>
+    <string name="value_not_available">اعلام نشده</string>
     <string name="network_request_failed">خطا در دریافت اطلاعات</string>
     <string name="login_phone">شماره تلفن</string>
     <string name="login_send_code">ارسال کد</string>
@@ -89,4 +89,5 @@
     <string name="login_subtitle">وارد حساب برق‌من شو .</string>
     <string name="logout_subtitle">از خروج از حساب مطمئن هستی ؟</string>
     <string name="yes">آره</string>
+    <string name="today">امروز</string>
 </resources>

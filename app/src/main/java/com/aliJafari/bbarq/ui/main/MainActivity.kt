@@ -780,20 +780,6 @@ fun PermissionWarningCard(
     }
 }
 
-fun String.toEpochMillis(time: String): Long {
-    val pDate = PersianDate().also {
-        it.shYear = split('/')[0].toInt()
-        it.shMonth = split('/')[1].toInt()
-        it.shDay = split('/')[2].toInt()
-        it.hour = time.split(':')[0].toInt()
-        it.minute = time.split(':')[1].toInt()
-    }
-    return Calendar.getInstance().apply {
-        set(pDate.grgYear, pDate.grgMonth - 1, pDate.grgDay, pDate.hour, pDate.minute, 0)
-        set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
-}
-
 fun daysBetween(from: Calendar, to: Calendar): Int {
     val a = from.clone() as Calendar
     a.set(Calendar.HOUR_OF_DAY, 0); a.set(Calendar.MINUTE, 0); a.set(Calendar.SECOND, 0); a.set(
@@ -847,14 +833,14 @@ private fun ScheduleCard(schedule: PlaceOutage,shareScope : CoroutineScope) {
                 Spacer(Modifier.height(8.dp))
                 ScheduleMetaRow(
                     iconRes = R.drawable.ic_calendar,
-                    text = schedule.outage.date?:"No Date Provided"
+                    text = schedule.outage.date?:stringResource(R.string.value_not_available)
                 )
                 ScheduleMetaRow(
                     iconRes = R.drawable.ic_clock,
                     text = stringResource(
                         R.string.schedule_time_range,
-                        schedule.outage.startTime ?: stringResource(R.string.value_not_available),
-                        schedule.outage.endTime ?: stringResource(R.string.value_not_available)
+                        schedule.outage.startTime?.takeIf { it.isNotBlank() } ?: stringResource(R.string.value_not_available),
+                        schedule.outage.endTime?.takeIf { it.isNotBlank() } ?: stringResource(R.string.value_not_available)
                     )
                 )
                 ScheduleMetaRow(

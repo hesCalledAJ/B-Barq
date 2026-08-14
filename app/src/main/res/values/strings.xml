@@ -25,7 +25,7 @@
     <string name="action_logout">Logout</string>
     <string name="notification_permission_sub">Please allow the app to send notifications.</string>
     <string name="menu_more">More</string>
-    <string name="value_not_available">-</string>
+    <string name="value_not_available">Unknown</string>
     <string name="network_request_failed">Network Request Failed</string>
     <string name="login_phone">Phone</string>
     <string name="login_send_code">Send Code</string>
@@ -90,4 +90,5 @@
     <string name="login_subtitle">Sign in to your Barghe Man account .</string>
     <string name="logout_subtitle">Are you sure you want to log out of your account?</string>
     <string name="yes">Confirm</string>
+    <string name="today">Today</string>
 </resources>

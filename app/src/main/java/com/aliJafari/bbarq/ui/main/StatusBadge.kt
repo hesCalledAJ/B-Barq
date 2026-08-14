@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.model.Outage
+import com.aliJafari.bbarq.utils.toEpochMillis
 import java.util.Calendar
 
 enum class ScheduleUrgency { ENDED, ONGOING, SOON, TODAY, UPCOMING }
@@ -28,11 +29,31 @@ enum class ScheduleUrgency { ENDED, ONGOING, SOON, TODAY, UPCOMING }
 data class ScheduleStatus(val label: String, val urgency: ScheduleUrgency)
 
 fun relativeStatus(outage: Outage, context: Context): ScheduleStatus {
-    val date = outage.date ?: return ScheduleStatus(context.getString(R.string.value_not_available), ScheduleUrgency.UPCOMING)
-    val startTime = outage.startTime ?: return ScheduleStatus(context.getString(R.string.value_not_available), ScheduleUrgency.UPCOMING)
+    val date = outage.date?.takeIf { it.isNotBlank() }
+        ?: return ScheduleStatus(context.getString(R.string.value_not_available), ScheduleUrgency.UPCOMING)
+
+    val startTime = outage.startTime?.takeIf { it.isNotBlank() }
+
+    // no time — fall back to day-level status only
+    if (startTime == null) {
+        val dateOnlyTarget = date.toEpochMillis("00:00")
+        if (dateOnlyTarget == -1L) return ScheduleStatus(context.getString(R.string.value_not_available), ScheduleUrgency.UPCOMING)
+
+        val daysDiff = daysBetween(Calendar.getInstance(), Calendar.getInstance().apply { timeInMillis = dateOnlyTarget })
+        return when {
+            daysDiff < 0 -> ScheduleStatus(context.getString(R.string.status_ended), ScheduleUrgency.ENDED)
+            daysDiff == 0 -> ScheduleStatus(context.getString(R.string.today), ScheduleUrgency.SOON)
+            daysDiff == 1 -> ScheduleStatus(context.getString(R.string.tomorrow), ScheduleUrgency.TODAY)
+            else -> ScheduleStatus(context.getString(R.string.in_days, daysDiff), ScheduleUrgency.UPCOMING)
+        }
+    }
 
     val startTarget = date.toEpochMillis(startTime)
-    val endTarget = outage.endTime?.let { date.toEpochMillis(it) }
+    if (startTarget == -1L) return ScheduleStatus(context.getString(R.string.value_not_available), ScheduleUrgency.UPCOMING)
+
+    var endTarget = outage.endTime?.takeIf { it.isNotBlank() }?.let { date.toEpochMillis(it) }?.takeIf { it != -1L }
+    if (endTarget != null && endTarget <= startTarget) endTarget += 24 * 60 * 60 * 1000 // end wraps past midnight
+
     val now = Calendar.getInstance().timeInMillis
 
     if (endTarget != null && now > endTarget)
