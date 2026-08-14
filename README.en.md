@@ -1,4 +1,4 @@
-<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/b454ae5c-4d40-4f31-8629-1bea17aca9d2" />
+<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/67eef54a-6aea-486c-9a43-550387652aa8" />
 
 # B-Barq ⚡
 
