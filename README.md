@@ -1,53 +1,49 @@
-<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/1d3421f0-b912-4d6d-b3b6-9214c5ca0bac" />
+<img width="1280" height="960" alt="image" src="https://github.com/user-attachments/assets/b454ae5c-4d40-4f31-8629-1bea17aca9d2" />
 
-# B-Barq ⚡
+# بی‌برق ⚡
+> [!NOTE]
+> [English README](README.en.md)
 
-B-Barq is a simple Android app that monitors the latest power outage schedules from the official site and reminds you on time — so your phone never runs out of charge and your work stays safe.
+بی‌برق یک اپلیکیشن اندروید است که برنامه قطعی برق چند مکان را از منبع رسمی برق‌من مانیتور می‌کند و قبل از هر قطعی به شما یادآوری می‌فرستد.
 
-## How It Works
+## نحوه کارکرد
+1. **با شماره تلفن همراه خود وارد شوید** (تایید با کد پیامکی از طریق برق‌من).
+2. **یک یا چند مکان اضافه کنید**، هر کدام با شناسه قبض مخصوص خودش.
+3. **دسترسی‌های لازم را بدهید.**
+4. **سرویس فورگراند را استارت کنید** تا مانیتورینگ شروع شود.
 
-1. **Provide your Bill ID (شناسه قبض)** to the app.
-2. **Grant the required permissions.**
-3. **Start the foreground service** to begin monitoring.
+سرویس هر ساعت منبع قطعی برق را چک می‌کند، آخرین برنامه‌ی همه‌ی مکان‌های شما را در یک نوتیفیکیشن ثابت نمایش می‌دهد، و بر اساس فاصله‌ی زمانی‌ای که برای هر مکان تنظیم کرده‌اید یادآوری می‌فرستد.
 
-The service checks the outage source every hour, displays the latest schedules in a persistent notification, and alerts you **30 minutes before each outage**.
+## امکانات
+* مانیتور کردن **چند مکان** همزمان، هر کدام با برنامه قطعی مستقل.
+* چک کردن ساعتی برنامه‌های رسمی قطعی برق.
+* نوتیفیکیشن ثابت و قابل گسترش که قطعی‌ها را بر اساس فوریت مرتب می‌کند و مکان‌های ناموفق را جدا نشان می‌دهد.
+* **فاصله زمانی یادآوری قابل تنظیم** برای هر مکان (مثلاً ۱۵ دقیقه، ۳۰ دقیقه، یا ۱ ساعت قبل)
+* رابط کاربری متریال دیزاین ۳، ساخته‌شده با جت‌پک کامپوز.
 
-## Features
+## پیش‌نیازها
+* اندروید 7 به بالا
+* دسترسی به اینترنت
+* یک شماره تلفن همراه معتبر برای ورود
 
-* Hourly monitoring of official outage schedules.
-* Persistent notification showing the latest info.
-* Reminders 30 minutes before each scheduled outage.
+## نصب
+۱. آخرین نسخه APK را از [Releases](https://github.com/hesCalledAJ/B-Barq/releases) بارگیری کنید.
+۲. آن را روی دستگاه خود نصب کنید.
+۳. وارد شوید، مکان‌های خود را اضافه کنید، دسترسی‌ها را بدهید و سرویس را استارت کنید.
 
-## Requirements
+## حریم خصوصی
+بی‌برق شماره تلفن همراه شما را فقط برای احراز هویت، و شناسه قبض‌ها را فقط برای دریافت برنامه قطعی برق استفاده می‌کند. **هیچ اطلاعات شخصی‌ای جمع‌آوری یا به اشتراک گذاشته نمی‌شود.**
 
-* Android 6.0+
-* Internet access
+## مشارکت
+از مشارکت شما استقبال می‌شود! اگر ایده، بهبود، یا رفع باگی دارید:
+* مخزن را فورک کنید
+* یک شاخه جدید بسازید
+* یک پول ریکوئست بفرستید
 
-## Installation
+## کارهای آینده
+* تشخیص خودکار شناسه قبض بر اساس موقعیت مکانی کاربر
+* پشتیبانی از ویجت برای نمایش سریع وضعیت قطعی برق
 
-1. Download the latest APK from [Releases](https://github.com/alijafari-gd/B-Barq/releases).
-2. Install it on your device.
-3. Enter your Bill ID, grant permissions, and start the service.
-
-## Privacy
-
-B-Barq only uses your Bill ID to fetch outage schedules and **does not collect or share any personal data**.
-
-## Contribution
-
-Contributions are welcome! If you have ideas, improvements, or bug fixes, feel free to:
-
-* Fork the repository
-* Create a new branch
-* Submit a pull request
-
-## TODO (Upcoming Features)
-
-* Automatic Bill ID detection based on the user's location
-* Rewriting the app withJetpack Compose and clean architecture&#x20;
-
-## License
-
+## لایسنس
 MIT License
-
-### Made with love (and frequent power cuts) by [AJ](https://github.com/alijafari-gd/). Inspired by his autistic friend.
+### با عشق (و قطعی‌های مکرر برق) ساخته شده توسط [AJ](https://github.com/alijafari-gd/).
