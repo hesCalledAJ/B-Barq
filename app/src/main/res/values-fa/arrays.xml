@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="power_reminder_titles">
+        <item>به‌زودی برق قطع میشه ⚡</item>
+        <item>به‌زودی برق قطع میشه ⚡</item>
+        <item>⚡ مطمئن شو گوشیت رو شارژ کردی!</item>
+        <item>وقتشه کارت رو ذخیره کنی!</item>
+        <item>هشدار قطع برق</item>
+        <item>شارژ کن! برق داره میره</item>
+        <item>آب و برق را مجانی می‌کنیم!</item>
+        <item>آب و برق را مجانی می‌کنیم!</item>
+        <item>آب و برق را مجانی می‌کنیم!</item>
+    </string-array>
+
+    <string-array name="no_power_cut_messages">
+        <item>آخیش! امروز خاموشی نداریم (امیدوارم).</item>
+        <item>امروز خاموشی برنامه‌ریزی نشده.</item>
+        <item>خاموشی برنامه‌ریزی نشده. (یا هنوز اعلام نشده)</item>
+        <item>فعلاً خبری از خاموشی نیست…</item>
+        <item>خاموشی برنامه‌ریزی نشده. (یا هنوز اعلام نشده)</item>
+    </string-array>
+</resources>

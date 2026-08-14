@@ -13,8 +13,8 @@ android {
         applicationId = "com.aliJafari.bbarq"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "2.1"
+        versionCode = 5
+        versionName = "3.67"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

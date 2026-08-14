@@ -3,6 +3,7 @@ package com.aliJafari.bbarq.data.repository
 import android.content.Context
 import com.aliJafari.bbarq.data.local.AuthStorage
 import com.aliJafari.bbarq.data.model.Outage
+import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
@@ -15,7 +16,6 @@ import saman.zamani.persiandate.PersianDate
 import saman.zamani.persiandate.PersianDateFormat
 import java.util.concurrent.TimeUnit
 
-
 class OutageRepository(val context: Context) {
 
     private val client = OkHttpClient.Builder()
@@ -23,6 +23,10 @@ class OutageRepository(val context: Context) {
         .build()
 
     fun sendRequest(billId: String, onResult: (List<Outage>) -> Unit) {
+        onResult(fetchOutages(billId))
+    }
+
+    fun fetchOutages(billId: String): List<Outage> {
         if (billId.length!=13) throw BillIDNot13Chars()
         val fromDate = PersianDate()
         val toDate = PersianDate().addDays(5)
@@ -46,22 +50,14 @@ class OutageRepository(val context: Context) {
             .addHeader("Accept", "application/json, text/plain, */*")
             .build()
 
-
         try {
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {
                 val body = response.body.string()
                 val json = JSONObject(body)
-                parseApiResponse(json.toString()).apply {
-                    onResult(
-                        data.map {
-                            it.toOutage(
-                                billId
-                            )
-                        }
-                    )
+                return parseApiResponse(json.toString()).data.map {
+                    it.toOutage(billId)
                 }
-
             } else {
                 throw RequestUnsuccessful(null,response.message)
             }
@@ -73,6 +69,13 @@ class OutageRepository(val context: Context) {
             throw RequestUnsuccessful(e)
         }
     }
+
+    fun fetchOutagesForPlaces(places: List<Place>): List<PlaceOutage> =
+        places.flatMap { place ->
+            fetchOutages(place.billId).map { outage ->
+                PlaceOutage(place = place, outage = outage)
+            }
+        }
 
     private fun parseApiResponse(jsonString: String): ApiResponseModel {
         val jsonObject = JSONObject(jsonString)
@@ -110,6 +113,10 @@ class OutageRepository(val context: Context) {
         )
     }
 }
+data class PlaceOutage(
+    val place: Place,
+    val outage: Outage
+)
 data class ApiResponseModel(
     val timeStamp: String,
     val status: Int,

@@ -14,25 +14,31 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
-import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.repository.OutageRepository
+import com.aliJafari.bbarq.data.repository.PlaceOutage
+import com.aliJafari.bbarq.data.repository.PlaceRepository
+import com.aliJafari.bbarq.ui.main.MainActivity
+import com.aliJafari.bbarq.ui.main.ScheduleUrgency
+import com.aliJafari.bbarq.ui.main.relativeStatus
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
+import com.aliJafari.bbarq.utils.ReminderOffset
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
+import com.aliJafari.bbarq.utils.toEpochMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class ForegroundService : Service() {
 
-    private var billId: String = ""
     val handler = Handler(Looper.getMainLooper())
     lateinit var repository : OutageRepository
+    lateinit var placeRepository: PlaceRepository
     private lateinit var notificationManager: NotificationManager
     private lateinit var prefs: SharedPreferences
     val channelId = "blackout_checker_channel"
 
-    private var outagesCache: List<Outage> = emptyList()
+    private var outagesCache: List<PlaceOutage> = emptyList()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action=="refresh"){
@@ -40,9 +46,9 @@ class ForegroundService : Service() {
             return START_STICKY
         }
         repository = OutageRepository(applicationContext)
+        placeRepository = PlaceRepository(applicationContext)
         notificationManager = getSystemService(android.app.NotificationManager::class.java)
         prefs = applicationContext.getSharedPreferences("my_prefs", MODE_PRIVATE)
-        billId = prefs.getString("billId", "").toString()
         startForeground(1, createNotification())
         startRepeatingTask()
 
@@ -52,19 +58,26 @@ class ForegroundService : Service() {
 
     private fun fetchApiData() {
         CoroutineScope(Dispatchers.IO).launch {
-            try {
-                repository.sendRequest(billId) {
-                    scheduleReminder(it)
-                    updateNotification(it)
-                    outagesCache = it
+            val schedules = mutableListOf<PlaceOutage>()
+            val errors = mutableListOf<String>()
+            val places = placeRepository.getPlaces()
+            places.forEach { place ->
+                try {
+                    repository.fetchOutages(place.billId).forEach { outage ->
+                        schedules.add(PlaceOutage(place = place, outage = outage))
+                    }
+                } catch (error: BillIDNotFoundException) {
+                    errors.add(getString(R.string.place_fetch_invalid_bill_id, place.name))
+                } catch (error: BillIDNot13Chars) {
+                    errors.add(getString(R.string.place_fetch_invalid_count, place.name))
+                } catch (error: RequestUnsuccessful) {
+                    errors.add(getString(R.string.place_fetch_failed, place.name, error.details))
                 }
-            } catch (error: BillIDNotFoundException) {
-                updateNotification(outagesCache, getString(R.string.notification_update_error_unknown_bill_id))
-            } catch (error: BillIDNot13Chars) {
-                updateNotification(outagesCache, getString(R.string.notification_update_error_unknown_bill_id))
-            } catch (error: RequestUnsuccessful) {
-                updateNotification(outagesCache, getString(R.string.notification_update_error_connection_problem))
             }
+            val note = errors.joinToString("\n").let { if (it.isBlank()) "" else "$it\n" }
+            scheduleReminder(schedules)
+            updateNotification(if (schedules.isEmpty()) outagesCache else schedules, note)
+            if (schedules.isNotEmpty()) outagesCache = schedules
         }
     }
     private fun startRepeatingTask() {
@@ -78,12 +91,11 @@ class ForegroundService : Service() {
         handler.post(runnable)
     }
 
-    private fun scheduleReminder(outages: List<Outage>) {
-        outages.forEach {
-            if (prefs.getBoolean("reminder", false)) {
-                com.aliJafari.bbarq.utils.scheduleReminder(
-                    applicationContext, it
-                )
+    private fun scheduleReminder(outages: List<PlaceOutage>) {
+        outages.forEach { po ->
+            ReminderOffset.entries.forEach { offset ->
+                val enabled = po.place.reminderOffsetsMask and offset.bit != 0
+                com.aliJafari.bbarq.utils.scheduleReminder(applicationContext, po.outage, po.place.name, offset, enabled)
             }
         }
     }
@@ -109,25 +121,36 @@ class ForegroundService : Service() {
             .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()
     }
 
-    fun updateNotification(schedules: List<Outage>, note: String = "") {
-        var content = note
-        if (schedules.isEmpty()){
+    fun updateNotification(schedules: List<PlaceOutage>, errors: String = "") {
+        val active = schedules
+            .map { it to relativeStatus(it.outage, applicationContext) }
+            .filter { (_, status) -> status.urgency != ScheduleUrgency.ENDED }
+            .sortedBy { (it, _) -> it.outage.toEpochMillis() }
 
-            val messages = resources.getStringArray(R.array.no_power_cut_messages)
-            content += messages.random()
+        val lines = active.map { (po, status) ->
+            "${po.place.name}: ${status.label} (${po.outage.startTime}-${po.outage.endTime})"
         }
-        for (schedule in schedules) {
-            content += getString(
-                R.string.notification_schedule_line,
-                schedule.date,
-                schedule.startTime,
-                schedule.endTime
-            )
-        }
+
+        val summary = if (active.isEmpty() && errors.isBlank())
+            resources.getStringArray(R.array.no_power_cut_messages).random()
+        else if (errors.isNotBlank()) getString(R.string.network_request_failed)
+        else active[0].second.label
+
+        val style = NotificationCompat.InboxStyle()
+        lines.forEach { style.addLine(it) }
+        if (errors.isNotBlank()) errors.lines().forEach { it -> style.addLine(it) }
+
         notificationManager.notify(
             1,
-            NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.notification_monitoring_title))
-                .setContentText(content).setSilent(true)
+            NotificationCompat.Builder(this, channelId)
+                .setContentTitle(getString(R.string.notification_monitoring_title))
+                .setContentText(summary)
+                .setContentIntent(
+                    PendingIntent.getActivity(this,6565,Intent(this, MainActivity::class.java),
+                        PendingIntent.FLAG_IMMUTABLE)
+                )
+                .setStyle(style)
+                .setSilent(true)
                 .addAction(R.drawable.ic_renew, getString(R.string.refresh), refreshIntent)
                 .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()
         )

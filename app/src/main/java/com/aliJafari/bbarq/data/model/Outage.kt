@@ -15,3 +15,4 @@ data class Outage(
     @ColumnInfo(name = "address") val address: String?,
 
     )
+//TODO reminder setting on each Place

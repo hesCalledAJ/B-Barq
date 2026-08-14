@@ -1,50 +1,8 @@
 <resources>
     <string name="app_name">B-Barq</string>
 
-    <string name="lorem_ipsum">
-        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
-        volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
-        dui nec risus. Maecenas non sodales nisi, vel dictum dolor. Class aptent taciti sociosqu ad
-        litora torquent per conubia nostra, per inceptos himenaeos. Suspendisse blandit eleifend
-        diam, vel rutrum tellus vulputate quis. Aliquam eget libero aliquet, imperdiet nisl a,
-        ornare ex. Sed rhoncus est ut libero porta lobortis. Fusce in dictum tellus.\n\n
-        Suspendisse interdum ornare ante. Aliquam nec cursus lorem. Morbi id magna felis. Vivamus
-        egestas, est a condimentum egestas, turpis nisl iaculis ipsum, in dictum tellus dolor sed
-        neque. Morbi tellus erat, dapibus ut sem a, iaculis tincidunt dui. Interdum et malesuada
-        fames ac ante ipsum primis in faucibus. Curabitur et eros porttitor, ultricies urna vitae,
-        molestie nibh. Phasellus at commodo eros, non aliquet metus. Sed maximus nisl nec dolor
-        bibendum, vel congue leo egestas.\n\n
-        Sed interdum tortor nibh, in sagittis risus mollis quis. Curabitur mi odio, condimentum sit
-        amet auctor at, mollis non turpis. Nullam pretium libero vestibulum, finibus orci vel,
-        molestie quam. Fusce blandit tincidunt nulla, quis sollicitudin libero facilisis et. Integer
-        interdum nunc ligula, et fermentum metus hendrerit id. Vestibulum lectus felis, dictum at
-        lacinia sit amet, tristique id quam. Cras eu consequat dui. Suspendisse sodales nunc ligula,
-        in lobortis sem porta sed. Integer id ultrices magna, in luctus elit. Sed a pellentesque
-        est.\n\n
-        Aenean nunc velit, lacinia sed dolor sed, ultrices viverra nulla. Etiam a venenatis nibh.
-        Morbi laoreet, tortor sed facilisis varius, nibh orci rhoncus nulla, id elementum leo dui
-        non lorem. Nam mollis ipsum quis auctor varius. Quisque elementum eu libero sed commodo. In
-        eros nisl, imperdiet vel imperdiet et, scelerisque a mauris. Pellentesque varius ex nunc,
-        quis imperdiet eros placerat ac. Duis finibus orci et est auctor tincidunt. Sed non viverra
-        ipsum. Nunc quis augue egestas, cursus lorem at, molestie sem. Morbi a consectetur ipsum, a
-        placerat diam. Etiam vulputate dignissim convallis. Integer faucibus mauris sit amet finibus
-        convallis.\n\n
-        Phasellus in aliquet mi. Pellentesque habitant morbi tristique senectus et netus et
-        malesuada fames ac turpis egestas. In volutpat arcu ut felis sagittis, in finibus massa
-        gravida. Pellentesque id tellus orci. Integer dictum, lorem sed efficitur ullamcorper,
-        libero justo consectetur ipsum, in mollis nisl ex sed nisl. Donec maximus ullamcorper
-        sodales. Praesent bibendum rhoncus tellus nec feugiat. In a ornare nulla. Donec rhoncus
-        libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
-        vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
-    </string>
-    <string name="bill_id_text_input_title">Bill ID :</string>
-    <string name="update_interval_slider_title">Update interval</string>
-    <string name="notify_changes_switch_title">Notify Changes</string>
-    <string name="notify_changes_switch_subtitle">Send a Notification when theres a change in outage schedules</string>
     <string name="save_button_text">Save</string>
     <string name="start_service_fab_text">Start Service</string>
-    <string name="reminder_switch_title">Reminder</string>
-    <string name="reminder_switch_subtitle">Sends a reminder 30 Minutes before each schedule</string>
     <string name="schedule_layout_start_title">Starts at :</string>
     <string name="schedule_layout_end_title">Ends at :</string>
     <string name="address">Address :</string>
@@ -74,12 +32,62 @@
     <string name="login_attention">ATTENTION : Logging into Bargheman.com</string>
     <string name="login_sms_code">SMS Code</string>
     <string name="login_verify_code">Verify Code</string>
-    <string name="login_success_token">Login successful. Token: %1$s...</string>
+    <string name="login_success_token">Login successful. Token: %1$s…</string>
     <string name="login_restart_app">Restart App</string>
     <string name="notification_channel_blackout_checker">Blackout Checker</string>
-    <string name="notification_monitoring_title">Monitoring Blackout Schedules ...</string>
-    <string name="notification_service_running">Service is running ...</string>
+    <string name="notification_monitoring_title">Monitoring Blackout Schedules …</string>
+    <string name="notification_service_running">Service is running …</string>
     <string name="notification_update_error_unknown_bill_id">Update Error : Unknown Bill ID\n</string>
     <string name="notification_update_error_connection_problem">Update Error : Connection Problem\n</string>
-    <string name="notification_schedule_line">%1$s : From %2$s to %3$s\n</string>
+    <string name="notification_schedule_line">%1$s - %2$s : From %3$s to %4$s\n</string>
+    <string name="reminder_notification_text">%1$s power outage from %2$s to %3$s</string>
+    <string name="default_place_name">Home</string>
+    <string name="upcoming_outages">Upcoming Outages</string>
+    <string name="preferences_title">Preferences</string>
+    <string name="schedules_tab">Schedules</string>
+    <string name="prefs_tab">Preferences</string>
+    <string name="add_new_place">Add New Place</string>
+    <string name="add_first_place">Add First Place</string>
+    <string name="empty_places_message">Add a place to start tracking scheduled outages.</string>
+    <string name="place_fetch_invalid_count">%1$s has an invalid Bill ID length.</string>
+    <string name="place_fetch_invalid_bill_id">%1$s has an invalid Bill ID.</string>
+    <string name="place_fetch_failed">%1$s update failed : %2$s</string>
+    <string name="schedule_time_range">%1$s - %2$s</string>
+    <string name="share">Share</string>
+    <string name="outage_badge">OUTAGE</string>
+    <string name="place_id_line">ID: %1$s</string>
+    <string name="edit_place">Edit place</string>
+    <string name="delete_place">Delete place</string>
+    <string name="add_place_title">Add Place</string>
+    <string name="edit_place_title">Edit Place</string>
+    <string name="place_name">Place name</string>
+    <string name="place_bill_id">Bill ID</string>
+    <string name="place_color">Color</string>
+    <string name="place_icon">Icon</string>
+    <string name="cancel">Cancel</string>
+    <string name="place_reminders_switch_title">Reminders</string>
+    <string name="place_reminders_switch_subtitle">Get notified before this place\'s outage</string>
+    <string name="reminder_2h">2 hours before</string>
+    <string name="reminder_1h">1 hour before</string>
+    <string name="reminder_30m">30 minutes before</string>
+    <string name="reminder_5m">5 minutes before</string>
+    <string name="allow_post_notifications">Enable Notifications</string>
+    <string name="notification_permissoin_subtitle">Allow the app to send reminders</string>
+    <string name="status_ongoing">Ongoing</string>
+    <string name="in_minutes">in %d min</string>
+    <string name="in_hours">in %d hours</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="in_days">in %d days</string>
+    <string name="status_ended">Ended</string>
+    <string name="places_section_title">Places</string>
+    <string name="appearance_section_title">Appearance</string>
+    <string name="dark_mode_title">Dark Mode</string>
+    <string name="account_section_title">Account</string>
+    <string name="language_title">Language</string>
+    <string name="action_logout_tip">Can recover from errors caused by an expired token</string>
+    <string name="share_outage_text" translatable="false">خاموشی برق در %1$s (%5$s) در تاریخ %2$s از ساعت %3$s تا %4$s برنامه‌ریزی شده است.</string>
+    <string name="login_title">Welcome !</string>
+    <string name="login_subtitle">Sign in to your Barghe Man account .</string>
+    <string name="logout_subtitle">Are you sure you want to log out of your account?</string>
+    <string name="yes">Confirm</string>
 </resources>
