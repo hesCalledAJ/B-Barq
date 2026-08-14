@@ -90,4 +90,6 @@
     <string name="logout_subtitle">از خروج از حساب مطمئن هستی ؟</string>
     <string name="yes">آره</string>
     <string name="today">امروز</string>
+    <string name="update_available_title">نسخه جدید در دسترس است</string>
+    <string name="update_button">بروزرسانی</string>
 </resources>

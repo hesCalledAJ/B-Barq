@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -63,6 +64,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -87,7 +89,6 @@ import com.aliJafari.bbarq.ForegroundService
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.local.AuthStorage
 import com.aliJafari.bbarq.data.local.PreferencesManager
-import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
@@ -98,6 +99,8 @@ import com.aliJafari.bbarq.ui.theme.BBarqTheme
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
+import com.aliJafari.bbarq.utils.UpdateChecker
+import com.aliJafari.bbarq.utils.UpdateInfo
 import com.aliJafari.bbarq.utils.shareSchedule
 import com.aliJafari.bbarq.utils.toEpochMillis
 import kotlinx.coroutines.CoroutineScope
@@ -105,7 +108,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import saman.zamani.persiandate.PersianDate
 import java.util.Calendar
 import java.util.Locale
 
@@ -148,7 +150,9 @@ class MainActivity : AppCompatActivity() {
             var darkModeEnabled by remember { mutableStateOf(prefsManager.getDarkMode(systemDarkThemeEnabled)) }
             var language by remember { mutableStateOf(prefsManager.getLanguage()) }
 
+
             BBarqTheme(darkTheme = darkModeEnabled) {
+
                 MainScreen(
                     selectedTab = selectedTab,
                     places = places,
@@ -168,7 +172,7 @@ class MainActivity : AppCompatActivity() {
                     shareScope = shareScope,
                     darkModeEnabled = darkModeEnabled,
                     onTabSelected = { selectedTab = it },
-                    onRefreshClick = { requestCurrentData(this) },
+                    onRefreshClick = { requestCurrentData(this@MainActivity) },
                     onServiceFabClick = ::toggleService,
                     onNotificationPermissionClick = ::askNotificationPermission,
                     onBatteryPermissionClick = ::openBatteryOptimizationSettings,
@@ -197,6 +201,7 @@ class MainActivity : AppCompatActivity() {
                         applyLanguage(it)
                     }
                 )
+
             }
         }
 
@@ -449,6 +454,7 @@ private fun MainScreen(
     var menuExpanded by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -600,6 +606,13 @@ private fun SchedulesTab(
     onRefreshClick: () -> Unit,
     onManagePlacesClick: () -> Unit,
 ) {
+
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+    var dismissed by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        updateInfo = UpdateChecker.checkForUpdate()
+    }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -607,6 +620,9 @@ private fun SchedulesTab(
         contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        if (updateInfo != null && !dismissed) {
+            item { UpdateAvailableCard(updateInfo!!, onDismiss = { dismissed = true }) }
+        }
         item {
             if (isLoading) {
                 LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -627,7 +643,10 @@ private fun SchedulesTab(
                 )
             }
         }
-        items((placeOutages).sortedBy { it.outage.toEpochMillis() }, key = { "${it.place.id}-${it.outage.id}" }) { schedule ->
+
+        items(
+            (placeOutages).sortedBy { it.outage.toEpochMillis() },
+            key = { "${it.place.id}-${it.outage.id}-${it.outage.date}-${it.outage.startTime}" }) { schedule ->
             ScheduleCard(schedule = schedule, shareScope = shareScope)
         }
         if (!isPlacesListEmpty) item {
@@ -857,9 +876,9 @@ private fun ScheduleCard(schedule: PlaceOutage,shareScope : CoroutineScope) {
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(7.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .clickable(true){
+                        .clickable(true) {
                             shareScope.launch {
-                                shareSchedule(c,schedule)
+                                shareSchedule(c, schedule)
                             }
                         }
                         .padding(vertical = 7.dp),

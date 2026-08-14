@@ -8,13 +8,15 @@ plugins {
 android {
     namespace = "com.aliJafari.bbarq"
     compileSdk = 36
-
+    val versionMajor = 3
+    val versionPatch = 68
     defaultConfig {
         applicationId = "com.aliJafari.bbarq"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "3.67.1"
+
+        versionCode = versionMajor * 10000 + versionPatch
+        versionName = "$versionMajor.$versionPatch"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -37,6 +39,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
