@@ -1,7 +1,6 @@
 package com.aliJafari.bbarq.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -9,8 +8,8 @@ import androidx.compose.ui.unit.sp
 import com.aliJafari.bbarq.R
 
 val AppFontFamily = FontFamily(
-    Font(R.font.normal_sans_reg, FontWeight.Normal),
-    Font(R.font.normal_sans_bold, FontWeight.Bold)
+    Font(R.font.font_reg, FontWeight.Normal),
+    Font(R.font.font_bold, FontWeight.Bold)
 )
 
 val Typography = Typography().let { base ->

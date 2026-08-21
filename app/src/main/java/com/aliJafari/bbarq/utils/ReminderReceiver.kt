@@ -14,6 +14,7 @@ import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.model.Outage
 import saman.zamani.persiandate.PersianDate
 import java.util.Calendar
+import java.util.Date
 import java.util.TimeZone
 
 class ReminderReceiver : BroadcastReceiver() {
@@ -51,7 +52,6 @@ class ReminderReceiver : BroadcastReceiver() {
         )
     }
 }
-
 fun scheduleReminder(context: Context, outage: Outage, placeName: String, offset: ReminderOffset, enabled: Boolean) {
 
     fun getTimestampFromPersianDate(pDate: PersianDate): Long {
@@ -85,6 +85,10 @@ fun scheduleReminder(context: Context, outage: Outage, placeName: String, offset
         it.hour = outage.startTime!!.split(':')[0].toInt()
         it.minute = outage.startTime.split(':')[1].toInt()
     }.subMinutes(offset.minutes)
-
-    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, getTimestampFromPersianDate(pDate), pendingIntent)
+    val triggerAt = getTimestampFromPersianDate(pDate)
+    if (triggerAt <= System.currentTimeMillis()) {
+        return
+    }
+    Log.e("Reminder", "scheduleReminder: set for $triggerAt", )
+    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
 }

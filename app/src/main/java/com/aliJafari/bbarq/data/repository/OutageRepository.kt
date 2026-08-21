@@ -35,7 +35,7 @@ class OutageRepository(val context: Context) {
         "from_date": "${dateFormat.format(fromDate)}",
         "to_date": "${dateFormat.format(toDate)}"
     }
-""".trimIndent()
+    """.trimIndent()
 
         val requestBody = jsonBody.toRequestBody(jsonMediaType)
 
@@ -47,24 +47,29 @@ class OutageRepository(val context: Context) {
             .addHeader("Accept", "application/json, text/plain, */*")
             .build()
 
-        try {
-            val response = client.newCall(request).execute()
-            if (response.isSuccessful) {
-                val body = response.body.string()
-                val json = JSONObject(body)
-                return parseApiResponse(json.toString()).data.map {
-                    it.toOutage(billId)
-                }.map { correctOutageTimes(it) }
-            } else {
-                throw RequestUnsuccessful(null,response.message)
+        var lastError: Exception? = null
+        repeat(3) { attempt ->
+            try {
+                val response = client.newCall(request).execute()
+                if (response.isSuccessful) {
+                    val body = response.body.string()
+                    val json = JSONObject(body)
+                    return parseApiResponse(json.toString()).data.map {
+                        it.toOutage(billId)
+                    }.map { correctOutageTimes(it) }
+                } else {
+                    throw RequestUnsuccessful(null, response.message)
+                }
+            } catch (e: BillIDNotFoundException) {
+                e.printStackTrace()
+                throw BillIDNotFoundException() // no retry
+            } catch (e: Exception) {
+                e.printStackTrace()
+                lastError = e
+                if (attempt < 2) Thread.sleep(1000)
             }
-        } catch (e: BillIDNotFoundException) {
-            e.printStackTrace()
-            throw BillIDNotFoundException()
-        }catch (e: Exception) {
-            e.printStackTrace()
-            throw RequestUnsuccessful(e)
         }
+        throw RequestUnsuccessful(lastError)
     }
 
     private fun parseApiResponse(jsonString: String): ApiResponseModel {

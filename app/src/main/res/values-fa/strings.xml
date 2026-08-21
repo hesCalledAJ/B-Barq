@@ -75,7 +75,11 @@
     <string name="notification_permissoin_subtitle">اجازه دهید برنامه یادآور ارسال کند</string>
     <string name="status_ongoing">در حال اجرا</string>
     <string name="in_minutes">%d دقیقه دیگر</string>
-    <string name="in_hours">%d ساعت دیگر</string>
+    <plurals name="in_hours">
+        <item quantity="one">%d ساعت دیگر</item>
+        <item quantity="other">%d ساعت دیگر</item>
+    </plurals>
+    <string name="in_hours_minutes">%1$d ساعت و %2$d دقیقه دیگر</string>
     <string name="tomorrow">فردا</string>
     <string name="in_days">%d روز دیگر</string>
     <string name="status_ended">پایان یافته</string>

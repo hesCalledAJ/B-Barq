@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.utils.toEpochMillis
+import com.aliJafari.bbarq.utils.toPersianDigitsIfNeeded
 import java.util.Calendar
 
 enum class ScheduleUrgency { ENDED, ONGOING, SOON, TODAY, UPCOMING }
@@ -63,14 +64,19 @@ fun relativeStatus(outage: Outage, context: Context): ScheduleStatus {
 
     val minutesDiff = (startTarget - now) / 60000
     val daysDiff = daysBetween(Calendar.getInstance(), Calendar.getInstance().apply { timeInMillis = startTarget })
-    return when {
-        daysDiff == 0 -> {
-            val hours = minutesDiff / 60
-            val label = if (hours < 1) context.getString(R.string.in_minutes, minutesDiff)
-            else context.getString(R.string.in_hours, hours)
+    return when (daysDiff) {
+        0 -> {
+            val roundedTotal = if (minutesDiff % 60 >= 50) minutesDiff + (60 - minutesDiff % 60) else minutesDiff
+            val hours = roundedTotal / 60
+            val mins = roundedTotal % 60
+            val label = when {
+                hours < 1 -> context.getString(R.string.in_minutes, minutesDiff)
+                mins <= 10 -> context.resources.getQuantityString(R.plurals.in_hours, hours.toInt(), hours)
+                else -> context.getString(R.string.in_hours_minutes, hours, mins)
+            }
             ScheduleStatus(label, if (hours < 3) ScheduleUrgency.SOON else ScheduleUrgency.TODAY)
         }
-        daysDiff == 1 -> ScheduleStatus(context.getString(R.string.tomorrow), ScheduleUrgency.TODAY)
+        1 -> ScheduleStatus(context.getString(R.string.tomorrow), ScheduleUrgency.TODAY)
         else -> ScheduleStatus(context.getString(R.string.in_days, daysDiff), ScheduleUrgency.UPCOMING)
     }
 }
@@ -93,6 +99,6 @@ fun StatusBadge(status: ScheduleStatus) {
     ) {
         Icon(painter = painterResource(icon), contentDescription = null, modifier = Modifier.size(13.dp), tint = fg)
         Spacer(Modifier.width(3.dp))
-        Text(status.label, color = fg, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+        Text(status.label.toPersianDigitsIfNeeded(), color = fg, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
     }
 }

@@ -9,7 +9,7 @@ android {
     namespace = "com.aliJafari.bbarq"
     compileSdk = 36
     val versionMajor = 3
-    val versionPatch = 70
+    val versionPatch = 71
     defaultConfig {
         applicationId = "com.aliJafari.bbarq"
         minSdk = 24

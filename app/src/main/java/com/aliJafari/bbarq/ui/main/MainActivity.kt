@@ -98,11 +98,14 @@ import com.aliJafari.bbarq.ui.auth.LoginActivity
 import com.aliJafari.bbarq.ui.theme.BBarqTheme
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
+import com.aliJafari.bbarq.utils.ReminderOffset
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
 import com.aliJafari.bbarq.utils.UpdateChecker
 import com.aliJafari.bbarq.utils.UpdateInfo
+import com.aliJafari.bbarq.utils.scheduleReminder
 import com.aliJafari.bbarq.utils.shareSchedule
 import com.aliJafari.bbarq.utils.toEpochMillis
+import com.aliJafari.bbarq.utils.toPersianDigitsIfNeeded
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -286,6 +289,7 @@ class MainActivity : AppCompatActivity() {
         emptyMessage = null
         errorMessages = ""
         failedPlaces = emptyList()
+        val previousOutages = placeOutages // snapshot before overwrite
         lifecycleScope.launch {
             val result = withContext(Dispatchers.IO) {
                 val repository = OutageRepository(applicationContext)
@@ -296,6 +300,11 @@ class MainActivity : AppCompatActivity() {
                     try {
                         repository.fetchOutages(place.billId).forEach { outage ->
                             schedules.add(PlaceOutage(place = place, outage = outage))
+
+                            ReminderOffset.entries.forEach { offset ->
+                                val enabled = place.reminderOffsetsMask and offset.bit != 0
+                                scheduleReminder(applicationContext, outage, place.name, offset, enabled)
+                            }
                         }
                     } catch (e: BillIDNot13Chars) {
                         errors.add(place)
@@ -305,6 +314,7 @@ class MainActivity : AppCompatActivity() {
                     } catch (e: RequestUnsuccessful) {
                         errors.add(place)
                         messages += c.getString(R.string.place_fetch_failed, place.name, e.details)
+                        schedules += previousOutages.filter { it.place.billId == place.billId } // keep stale data on transient failure
                     }
                 }
                 errorMessages = messages.joinToString("\n")
@@ -316,6 +326,7 @@ class MainActivity : AppCompatActivity() {
             emptyMessage = if (placeOutages.isEmpty()) {
                 resources.getStringArray(R.array.no_power_cut_messages).random()
             } else null
+
             isLoading = false
         }
     }
@@ -649,7 +660,7 @@ private fun SchedulesTab(
             key = { "${it.place.id}-${it.outage.id}-${it.outage.date}-${it.outage.startTime}" }) { schedule ->
             ScheduleCard(schedule = schedule, shareScope = shareScope)
         }
-        if (!isPlacesListEmpty) item {
+        if (!isPlacesListEmpty && !isLoading) item {
             TextButton(onClick = onRefreshClick, modifier = Modifier.fillMaxWidth()) {
                 Text(stringResource(R.string.refresh))
             }
@@ -840,7 +851,7 @@ private fun ScheduleCard(schedule: PlaceOutage,shareScope : CoroutineScope) {
                     )
                     Spacer(Modifier.width(5.dp))
                     Text(
-                        text = schedule.place.name,
+                        text = schedule.place.name.toPersianDigitsIfNeeded(),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold,
@@ -860,7 +871,7 @@ private fun ScheduleCard(schedule: PlaceOutage,shareScope : CoroutineScope) {
                         R.string.schedule_time_range,
                         schedule.outage.startTime?.takeIf { it.isNotBlank() } ?: stringResource(R.string.value_not_available),
                         schedule.outage.endTime?.takeIf { it.isNotBlank() } ?: stringResource(R.string.value_not_available)
-                    )
+                    ).toPersianDigitsIfNeeded()
                 )
                 ScheduleMetaRow(
                     iconRes = R.drawable.ic_bolt,
@@ -913,85 +924,11 @@ fun ScheduleMetaRow(
         )
         Spacer(Modifier.width(7.dp))
         Text(
-            text = text,
+            text = text.toPersianDigitsIfNeeded(),
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-    }
-}
-@Composable
-fun PlaceRow(
-    place: Place,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-) {
-    val colorOption = placeColorOption(place.colorKey)
-    val iconOption = placeIconOption(place.iconKey)
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        shape = RoundedCornerShape(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(colorOption.color),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(iconOption.icon),
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 14.dp)
-            ) {
-                Text(
-                    text = place.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(R.string.place_id_line, place.billId),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            FilledTonalIconButton(onClick = onEditClick, modifier = Modifier.size(38.dp)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_edit),
-                    contentDescription = stringResource(R.string.edit_place),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Spacer(Modifier.width(6.dp))
-            FilledTonalIconButton(
-                onClick = onDeleteClick,
-                modifier = Modifier.size(38.dp),
-                colors = IconButtonDefaults.filledTonalIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_delete),
-                    contentDescription = stringResource(R.string.delete_place),
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        }
     }
 }
 

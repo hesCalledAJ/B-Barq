@@ -3,6 +3,7 @@ package com.aliJafari.bbarq.utils
 import com.aliJafari.bbarq.data.model.Outage
 import saman.zamani.persiandate.PersianDate
 import java.util.Calendar
+import java.util.Locale
 
 fun String.toEpochMillis(time: String): Long {
     return try {
@@ -36,7 +37,7 @@ private fun normalizeTime(time: String): String {
 private fun addTwoHours(time: String): String {
     val (h, m) = time.split(':').map { it.toInt() }
     val totalMinutes = (h * 60 + m + 120) % (24 * 60)
-    return "%02d:%02d".format(totalMinutes / 60, totalMinutes % 60)
+    return "%02d:%02d".format(Locale.ENGLISH,totalMinutes / 60, totalMinutes % 60)
 }
 
 fun correctOutageTimes(outage: Outage): Outage {

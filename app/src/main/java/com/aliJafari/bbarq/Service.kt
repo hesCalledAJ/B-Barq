@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.repository.OutageRepository
@@ -29,6 +30,7 @@ import com.aliJafari.bbarq.utils.toEpochMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.Calendar
 import kotlin.collections.forEach
 
@@ -120,12 +122,15 @@ class ForegroundService : Service() {
     }
 
     private fun startNotificationTicker() {
-        val runnable = object : Runnable {
-            override fun run() {
+        lateinit var runnable: Runnable
+        runnable = Runnable {
+            CoroutineScope(Dispatchers.IO).launch {
                 val places = placeRepository.getPlaces()
                 val schedules = places.flatMap { p -> placeCache[p.id.toInt()]?.map { PlaceOutage(p, it) } ?: emptyList() }
-                if (schedules.isNotEmpty()) updateNotification(schedules)
-                handler.postDelayed(this, tickerInterval(schedules))
+                withContext(Dispatchers.Main) {
+                    if (schedules.isNotEmpty()) updateNotification(schedules)
+                    handler.postDelayed(runnable, tickerInterval(schedules))
+                }
             }
         }
         handler.post(runnable)
@@ -171,7 +176,7 @@ class ForegroundService : Service() {
 
         val summary = if (active.isEmpty() && errors.isBlank())
             resources.getStringArray(R.array.no_power_cut_messages).random()
-        else if (errors.isNotBlank()) getString(R.string.network_request_failed)
+        else if (active.isEmpty() && errors.isNotBlank()) getString(R.string.network_request_failed)
         else active[0].second.label
 
         val style = NotificationCompat.InboxStyle()

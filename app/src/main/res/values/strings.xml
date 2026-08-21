@@ -75,7 +75,11 @@
     <string name="notification_permissoin_subtitle">Allow the app to send reminders</string>
     <string name="status_ongoing">Ongoing</string>
     <string name="in_minutes">in %d min</string>
-    <string name="in_hours">in %d hours</string>
+    <plurals name="in_hours">
+        <item quantity="one">in %d hour</item>
+        <item quantity="other">in %d hours</item>
+    </plurals>
+    <string name="in_hours_minutes">in %1$dh %2$dm</string>
     <string name="tomorrow">Tomorrow</string>
     <string name="in_days">in %d days</string>
     <string name="status_ended">Ended</string>
