@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import androidx.core.app.NotificationCompat
+import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.repository.OutageRepository
 import com.aliJafari.bbarq.data.repository.PlaceOutage
 import com.aliJafari.bbarq.data.repository.PlaceRepository
@@ -28,67 +29,115 @@ import com.aliJafari.bbarq.utils.toEpochMillis
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import kotlin.collections.forEach
 
 class ForegroundService : Service() {
 
     val handler = Handler(Looper.getMainLooper())
-    lateinit var repository : OutageRepository
+    lateinit var repository: OutageRepository
     lateinit var placeRepository: PlaceRepository
     private lateinit var notificationManager: NotificationManager
     private lateinit var prefs: SharedPreferences
+    private lateinit var refreshIntent: PendingIntent
+    private var initialized = false
     val channelId = "blackout_checker_channel"
 
-    private var outagesCache: List<PlaceOutage> = emptyList()
+    private val placeCache = mutableMapOf<Int, List<Outage>>()
+    private val refreshHours = listOf(7, 12, 17, 21)
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action=="refresh"){
+        ensureInitialized()
+        startForeground(1, createNotification())
+
+        if (intent?.action == "refresh") {
             fetchApiData()
             return START_STICKY
         }
+
+        scheduleNextNetworkRefresh()
+        startNotificationTicker()
+        fetchApiData()
+        return START_STICKY
+    }
+
+    private fun ensureInitialized() {
+        if (initialized) return
         repository = OutageRepository(applicationContext)
         placeRepository = PlaceRepository(applicationContext)
-        notificationManager = getSystemService(android.app.NotificationManager::class.java)
+        notificationManager = getSystemService(NotificationManager::class.java)
         prefs = applicationContext.getSharedPreferences("my_prefs", MODE_PRIVATE)
-        startForeground(1, createNotification())
-        startRepeatingTask()
-
-
-        return START_STICKY
+        refreshIntent = PendingIntent.getService(
+            applicationContext, 555,
+            Intent(applicationContext, ForegroundService::class.java).apply { action = "refresh" },
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId, getString(R.string.notification_channel_blackout_checker), NotificationManager.IMPORTANCE_LOW
+            )
+            notificationManager.createNotificationChannel(channel)
+        }
+        initialized = true
     }
 
     private fun fetchApiData() {
         CoroutineScope(Dispatchers.IO).launch {
-            val schedules = mutableListOf<PlaceOutage>()
             val errors = mutableListOf<String>()
             val places = placeRepository.getPlaces()
+
             places.forEach { place ->
                 try {
-                    repository.fetchOutages(place.billId).forEach { outage ->
-                        schedules.add(PlaceOutage(place = place, outage = outage))
-                    }
-                } catch (error: BillIDNotFoundException) {
+                    placeCache[place.id.toInt()] = repository.fetchOutages(place.billId)
+                } catch (e: BillIDNotFoundException) {
                     errors.add(getString(R.string.place_fetch_invalid_bill_id, place.name))
-                } catch (error: BillIDNot13Chars) {
+                } catch (e: BillIDNot13Chars) {
                     errors.add(getString(R.string.place_fetch_invalid_count, place.name))
-                } catch (error: RequestUnsuccessful) {
-                    errors.add(getString(R.string.place_fetch_failed, place.name, error.details))
+                } catch (e: RequestUnsuccessful) {
+                    errors.add(getString(R.string.place_fetch_failed, place.name, e.details))
                 }
-            }
-            val note = errors.joinToString("\n").let { if (it.isBlank()) "" else "$it\n" }
-            scheduleReminder(schedules)
-            updateNotification(if (schedules.isEmpty()) outagesCache else schedules, note)
-            if (schedules.isNotEmpty()) outagesCache = schedules
-        }
-    }
-    private fun startRepeatingTask() {
-        val runnable = object : Runnable {
-            override fun run() {
-                fetchApiData()
-                handler.postDelayed(this, 3600_000) // 1 hour delay
+                // failure leaves placeCache[place.id] untouched -> stale but not lost
             }
 
+            val schedules = places.flatMap { p -> placeCache[p.id.toInt()]?.map { PlaceOutage(p, it) } ?: emptyList() }
+            val note = errors.joinToString("\n").let { if (it.isBlank()) "" else "$it\n" }
+            scheduleReminder(schedules)
+            updateNotification(schedules, note)
+        }
+    }
+
+    private fun scheduleNextNetworkRefresh() {
+        val now = Calendar.getInstance()
+        val next = refreshHours
+            .map { h -> Calendar.getInstance().apply { set(Calendar.HOUR_OF_DAY, h); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0) } }
+            .firstOrNull { it.after(now) }
+            ?: Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, 1)
+                set(Calendar.HOUR_OF_DAY, refreshHours.first()); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0)
+            }
+
+        handler.postDelayed({ fetchApiData(); scheduleNextNetworkRefresh() }, next.timeInMillis - now.timeInMillis)
+    }
+
+    private fun startNotificationTicker() {
+        val runnable = object : Runnable {
+            override fun run() {
+                val places = placeRepository.getPlaces()
+                val schedules = places.flatMap { p -> placeCache[p.id.toInt()]?.map { PlaceOutage(p, it) } ?: emptyList() }
+                if (schedules.isNotEmpty()) updateNotification(schedules)
+                handler.postDelayed(this, tickerInterval(schedules))
+            }
         }
         handler.post(runnable)
+    }
+
+    private fun tickerInterval(schedules: List<PlaceOutage>): Long {
+        val urgencies = schedules.map { relativeStatus(it.outage, applicationContext).urgency }
+        return when {
+            urgencies.any { it == ScheduleUrgency.ONGOING || it == ScheduleUrgency.SOON } -> 60_000L
+            urgencies.any { it == ScheduleUrgency.TODAY } -> 5 * 60_000L
+            else -> 15 * 60_000L
+        }
     }
 
     private fun scheduleReminder(outages: List<PlaceOutage>) {
@@ -100,25 +149,14 @@ class ForegroundService : Service() {
         }
     }
 
-
-    lateinit var refreshIntent : PendingIntent
-
     private fun createNotification(): Notification {
-        refreshIntent = PendingIntent.getService(
-            applicationContext, 555, Intent(applicationContext, ForegroundService::class.java).also {
-                it.action = "refresh"
-            }, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                channelId, getString(R.string.notification_channel_blackout_checker), NotificationManager.IMPORTANCE_LOW
-            )
-            getSystemService(NotificationManager::class.java)?.createNotificationChannel(channel)
-        }
-        return NotificationCompat.Builder(this, channelId).setContentTitle(getString(R.string.notification_monitoring_title))
-            .setContentText(getString(R.string.notification_service_running)).setSilent(true)
+        return NotificationCompat.Builder(this, channelId)
+            .setContentTitle(getString(R.string.notification_monitoring_title))
+            .setContentText(getString(R.string.notification_service_running))
+            .setSilent(true)
             .addAction(R.drawable.ic_renew, getString(R.string.refresh), refreshIntent)
-            .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()
+            .setSmallIcon(R.drawable.electricity_caution_svgrepo_com)
+            .build()
     }
 
     fun updateNotification(schedules: List<PlaceOutage>, errors: String = "") {
@@ -138,7 +176,7 @@ class ForegroundService : Service() {
 
         val style = NotificationCompat.InboxStyle()
         lines.forEach { style.addLine(it) }
-        if (errors.isNotBlank()) errors.lines().forEach { it -> style.addLine(it) }
+        if (errors.isNotBlank()) errors.lines().forEach { style.addLine(it) }
 
         notificationManager.notify(
             1,
@@ -146,13 +184,13 @@ class ForegroundService : Service() {
                 .setContentTitle(getString(R.string.notification_monitoring_title))
                 .setContentText(summary)
                 .setContentIntent(
-                    PendingIntent.getActivity(this,6565,Intent(this, MainActivity::class.java),
-                        PendingIntent.FLAG_IMMUTABLE)
+                    PendingIntent.getActivity(this, 6565, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
                 )
                 .setStyle(style)
                 .setSilent(true)
                 .addAction(R.drawable.ic_renew, getString(R.string.refresh), refreshIntent)
-                .setSmallIcon(R.drawable.electricity_caution_svgrepo_com).build()
+                .setSmallIcon(R.drawable.electricity_caution_svgrepo_com)
+                .build()
         )
     }
 

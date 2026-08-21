@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">بی-برق</string>
+    <string name="app_name">بی‌برق</string>
     <string name="save_button_text">ذخیره</string>
     <string name="start_service_fab_text">شروع سرویس</string>
     <string name="schedule_layout_start_title">شروع :</string>

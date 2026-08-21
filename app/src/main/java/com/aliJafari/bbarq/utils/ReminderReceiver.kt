@@ -62,7 +62,7 @@ fun scheduleReminder(context: Context, outage: Outage, placeName: String, offset
     }
 
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val requestCode = outage.id * 16 + offset.bit // unique per outage+offset combo
+    val requestCode = "${outage.id}-${outage.date}-${outage.startTime}-${offset.bit}".hashCode()
 
     val intent = Intent(context, ReminderReceiver::class.java).also {
         it.putExtra("placeName", placeName)

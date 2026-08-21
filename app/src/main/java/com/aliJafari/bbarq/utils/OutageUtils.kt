@@ -27,3 +27,25 @@ fun String.toEpochMillis(time: String): Long {
 }
 
 fun Outage.toEpochMillis(): Long = date?.toEpochMillis(startTime ?: "00:00") ?: -1
+
+private fun normalizeTime(time: String): String {
+    val parts = time.split(':')
+    return "${parts[0]}:${parts[1]}"
+}
+
+private fun addTwoHours(time: String): String {
+    val (h, m) = time.split(':').map { it.toInt() }
+    val totalMinutes = (h * 60 + m + 120) % (24 * 60)
+    return "%02d:%02d".format(totalMinutes / 60, totalMinutes % 60)
+}
+
+fun correctOutageTimes(outage: Outage): Outage {
+    val start = outage.startTime
+    val end = outage.endTime
+    if (!start.isNullOrBlank() || end.isNullOrBlank()) return outage.copy(
+        startTime = start?.let { normalizeTime(it) },
+        endTime = end?.let { normalizeTime(it) }
+    )
+    val correctedStart = normalizeTime(end)
+    return outage.copy(startTime = correctedStart, endTime = addTwoHours(correctedStart))
+}

@@ -7,6 +7,7 @@ import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
+import com.aliJafari.bbarq.utils.correctOutageTimes
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -21,10 +22,6 @@ class OutageRepository(val context: Context) {
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .build()
-
-    fun sendRequest(billId: String, onResult: (List<Outage>) -> Unit) {
-        onResult(fetchOutages(billId))
-    }
 
     fun fetchOutages(billId: String): List<Outage> {
         if (billId.length!=13) throw BillIDNot13Chars()
@@ -57,7 +54,7 @@ class OutageRepository(val context: Context) {
                 val json = JSONObject(body)
                 return parseApiResponse(json.toString()).data.map {
                     it.toOutage(billId)
-                }
+                }.map { correctOutageTimes(it) }
             } else {
                 throw RequestUnsuccessful(null,response.message)
             }
@@ -69,13 +66,6 @@ class OutageRepository(val context: Context) {
             throw RequestUnsuccessful(e)
         }
     }
-
-    fun fetchOutagesForPlaces(places: List<Place>): List<PlaceOutage> =
-        places.flatMap { place ->
-            fetchOutages(place.billId).map { outage ->
-                PlaceOutage(place = place, outage = outage)
-            }
-        }
 
     private fun parseApiResponse(jsonString: String): ApiResponseModel {
         val jsonObject = JSONObject(jsonString)
