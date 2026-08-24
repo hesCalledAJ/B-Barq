@@ -77,11 +77,10 @@ fun scheduleReminder(context: Context, outage: Outage, placeName: String, offset
     alarmManager.cancel(pendingIntent)
     if (!enabled) return
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !alarmManager.canScheduleExactAlarms()) return
-
     val pDate = PersianDate().also {
-        it.shYear = outage.date!!.split('/')[0].toInt()
-        it.shMonth = outage.date.split('/')[1].toInt()
-        it.shDay = outage.date.split('/')[2].toInt()
+        it.shYear = outage.date!!.split('/','-')[0].toInt()
+        it.shMonth = outage.date.split('/','-')[1].toInt()
+        it.shDay = outage.date.split('/','-')[2].toInt()
         it.hour = outage.startTime!!.split(':')[0].toInt()
         it.minute = outage.startTime.split(':')[1].toInt()
     }.subMinutes(offset.minutes)

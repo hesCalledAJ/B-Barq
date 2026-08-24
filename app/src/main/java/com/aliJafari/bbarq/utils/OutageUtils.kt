@@ -7,7 +7,7 @@ import java.util.Locale
 
 fun String.toEpochMillis(time: String): Long {
     return try {
-        val dParts = split('/')
+        val dParts = split('/', '-')
         if (dParts.size != 3) return -1
         val safeTime = time.takeIf { it.contains(':') } ?: "00:00"
         val tParts = safeTime.split(':')
