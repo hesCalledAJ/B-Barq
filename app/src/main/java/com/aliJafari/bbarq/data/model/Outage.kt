@@ -9,6 +9,7 @@ data class Outage(
     @PrimaryKey val id: Int,
     @ColumnInfo(name = "reason") val reason: String?,
     @ColumnInfo(name = "date") val date: String?,
+    @ColumnInfo(name = "outageTime") val time: String?,
     @ColumnInfo(name = "outageStartTime") val startTime: String?,
     @ColumnInfo(name = "outageEndTime") val endTime: String?,
     @ColumnInfo(name = "billId") val billId: String?,

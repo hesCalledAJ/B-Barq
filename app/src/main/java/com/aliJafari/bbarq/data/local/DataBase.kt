@@ -11,7 +11,7 @@ import com.aliJafari.bbarq.data.local.dao.PlaceDao
 import com.aliJafari.bbarq.data.model.Outage
 import com.aliJafari.bbarq.data.model.Place
 
-@Database(entities = [Outage::class, Place::class], version = 2, exportSchema = false)
+@Database(entities = [Outage::class, Place::class], version = 3, exportSchema = true)
 abstract class ADatabase : RoomDatabase() {
     abstract fun OutageDao(): OutageDao
     abstract fun PlaceDao(): PlaceDao
@@ -35,7 +35,11 @@ abstract class ADatabase : RoomDatabase() {
                 )
             }
         }
-
+        val migration2To3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE outages ADD COLUMN outageTime TEXT")
+            }
+        }
         fun getInstance(context: Context): ADatabase =
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
@@ -43,7 +47,7 @@ abstract class ADatabase : RoomDatabase() {
                     ADatabase::class.java,
                     "bbarq.db"
                 )
-                    .addMigrations(migration1To2)
+                    .addMigrations(migration1To2,migration2To3)
                     .build()
                     .also { instance = it }
             }

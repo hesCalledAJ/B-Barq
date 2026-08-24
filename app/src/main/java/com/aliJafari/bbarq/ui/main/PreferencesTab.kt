@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.aliJafari.bbarq.BuildConfig
 import com.aliJafari.bbarq.R
 import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.utils.toPersianDigitsIfNeeded
@@ -231,6 +233,8 @@ fun PreferencesTab(
         item { SectionHeader(stringResource(R.string.account_section_title)) }
         item { LogoutCard(onClick = {showLogoutDialog = true}) }
         item { Text(text = stringResource(R.string.action_logout_tip),style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)) }
+        item { Spacer(Modifier.height(10.dp)) }
+        item { Text(modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center,text = stringResource(R.string.version,BuildConfig.VERSION_NAME),style = MaterialTheme.typography.bodySmall) }
     }
 }
 

@@ -14,12 +14,13 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.provider.Settings
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -38,27 +39,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -121,7 +122,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefsManager: PreferencesManager
 
 
-    private var selectedTab by mutableStateOf(MainTab.Schedules)
+    private var selectedTab by mutableStateOf(Tab.Schedules)
     private var places by mutableStateOf<List<Place>>(emptyList())
     private var placeOutages by mutableStateOf<List<PlaceOutage>>(emptyList())
     private var emptyMessage by mutableStateOf<String?>(null)
@@ -181,7 +182,7 @@ class MainActivity : AppCompatActivity() {
                     onBatteryPermissionClick = ::openBatteryOptimizationSettings,
                     onExactAlarmPermissionClick = ::openExactAlarmSettings,
                     onAddPlaceClick = {
-                        selectedTab = MainTab.Preferences
+                        selectedTab = Tab.Preferences
                         editingPlace = null
                         showPlaceSheet = true
                     },
@@ -419,7 +420,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-private enum class MainTab {
+private enum class Tab {
     Schedules,
     Preferences
 }
@@ -429,7 +430,7 @@ private enum class MainTab {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreen(
-    selectedTab: MainTab,
+    selectedTab: Tab,
     places: List<Place>,
     placeOutages: List<PlaceOutage>,
     emptyMessage: String?,
@@ -446,7 +447,7 @@ private fun MainScreen(
     showPlaceSheet: Boolean,
     editingPlace: Place?,
     shareScope: CoroutineScope,
-    onTabSelected: (MainTab) -> Unit,
+    onTabSelected: (Tab) -> Unit,
     onRefreshClick: () -> Unit,
     onServiceFabClick: () -> Unit,
     onNotificationPermissionClick: () -> Unit,
@@ -472,7 +473,7 @@ private fun MainScreen(
                 title = {
                     Text(
                         stringResource(
-                            if (selectedTab == MainTab.Schedules) {
+                            if (selectedTab == Tab.Schedules) {
                                 R.string.upcoming_outages
                             } else {
                                 R.string.preferences_title
@@ -505,8 +506,8 @@ private fun MainScreen(
         bottomBar = {
             NavigationBar {
                 NavigationBarItem(
-                    selected = selectedTab == MainTab.Schedules,
-                    onClick = { onTabSelected(MainTab.Schedules) },
+                    selected = selectedTab == Tab.Schedules,
+                    onClick = { onTabSelected(Tab.Schedules) },
                     icon = {
                         Icon(
                             painter = painterResource(R.drawable.ic_schedule_tab),
@@ -517,8 +518,8 @@ private fun MainScreen(
                     label = { Text(stringResource(R.string.schedules_tab)) }
                 )
                 NavigationBarItem(
-                    selected = selectedTab == MainTab.Preferences,
-                    onClick = { onTabSelected(MainTab.Preferences) },
+                    selected = selectedTab == Tab.Preferences,
+                    onClick = { onTabSelected(Tab.Preferences) },
                     icon = {
                         Icon(
                             painter = painterResource(R.drawable.ic_prefs),
@@ -532,7 +533,7 @@ private fun MainScreen(
         },
         floatingActionButton = {
             when (selectedTab) {
-                MainTab.Schedules -> ExtendedFloatingActionButton(
+                Tab.Schedules -> ExtendedFloatingActionButton(
                     onClick = onServiceFabClick,
                     expanded = true,
                     icon = {
@@ -549,11 +550,11 @@ private fun MainScreen(
                     text = { Text(stringResource(if (serviceRunning) R.string.stop_service_fab else R.string.start_service_fab)) }
                 )
 
-                MainTab.Preferences -> {}
+                Tab.Preferences -> {}
             }
         }
     ) { padding ->
-        if (selectedTab == MainTab.Schedules) {
+        if (selectedTab == Tab.Schedules) {
             SchedulesTab(
                 placeOutages = placeOutages,
                 emptyMessage = emptyMessage,
@@ -612,18 +613,27 @@ private fun SchedulesTab(
     isLoading: Boolean,
     canStartService: Boolean,
     contentPadding: PaddingValues,
-    isPlacesListEmpty : Boolean,
-    shareScope : CoroutineScope,
+    isPlacesListEmpty: Boolean,
+    shareScope: CoroutineScope,
     onRefreshClick: () -> Unit,
     onManagePlacesClick: () -> Unit,
 ) {
-
     var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
     var dismissed by remember { mutableStateOf(false) }
+    var selectedPlaceId by remember { mutableStateOf<Long?>(null) } // null = all
 
     LaunchedEffect(Unit) {
         updateInfo = UpdateChecker.checkForUpdate()
     }
+
+    val places = remember(placeOutages) { placeOutages.map { it.place }.distinctBy { it.id } }
+
+    val visibleOutages = remember(placeOutages,  selectedPlaceId) {
+        val filtered = if (selectedPlaceId == null) placeOutages
+        else placeOutages.filter { it.place.id == selectedPlaceId }
+        filtered.sortedBy { it.outage.toEpochMillis() }
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -635,16 +645,11 @@ private fun SchedulesTab(
             item { UpdateAvailableCard(updateInfo!!, onDismiss = { dismissed = true }) }
         }
         item {
-            if (isLoading) {
-                LinearProgressIndicator(Modifier.fillMaxWidth())
-            } else {
-                Spacer(Modifier.height(2.dp))
-            }
+            if (isLoading) LinearProgressIndicator(Modifier.fillMaxWidth())
+            else Spacer(Modifier.height(2.dp))
         }
         if (failedPlaces.isNullOrEmpty().not()) {
-            item {
-                NetworkErrorCard( errorMessages)
-            }
+            item { NetworkErrorCard(errorMessages) }
         } else if (emptyMessage != null) {
             item {
                 EmptySchedules(
@@ -655,9 +660,35 @@ private fun SchedulesTab(
             }
         }
 
+        if (places.size > 1) item {
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    FilterPill(
+                        label = stringResource(R.string.all),
+                        selected = selectedPlaceId == null,
+                        color = MaterialTheme.colorScheme.primary,
+                        onClick = { selectedPlaceId = null }
+                    )
+                }
+                items(places, key = { it.id }) { place ->
+                    FilterPill(
+                        label = place.name,
+                        selected = selectedPlaceId == place.id,
+                        color = placeColorOption(place.colorKey).color,
+                        icon = placeIconOption(place.iconKey).icon,
+                        onClick = { selectedPlaceId = place.id }
+                    )
+                }
+            }
+        }
+
         items(
-            (placeOutages).sortedBy { it.outage.toEpochMillis() },
-            key = { "${it.place.id}-${it.outage.id}-${it.outage.date}-${it.outage.startTime}" }) { schedule ->
+            visibleOutages,
+            key = { "${it.place.id}-${it.outage.id}-${it.outage.date}-${it.outage.startTime}" }
+        ) { schedule ->
             ScheduleCard(schedule = schedule, shareScope = shareScope)
         }
         if (!isPlacesListEmpty && !isLoading) item {
@@ -667,6 +698,36 @@ private fun SchedulesTab(
         }
     }
 }
+
+@Composable
+private fun FilterPill(
+    label: String,
+    selected: Boolean,
+    color: Color,
+    icon: Int? = null,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (selected) color.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(1.dp, if (selected) color else Color.Transparent),
+    ) {
+        Row(
+            Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            if (icon != null) Icon(
+                painterResource(icon),
+                null,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(label, style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
 
 @Composable
 private fun EmptySchedules(
@@ -731,30 +792,6 @@ private fun NetworkErrorCard(error: String) {
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun PlacePill(place: Place) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.12f))
-            .padding(horizontal = 10.dp, vertical = 6.dp)
-    ) {
-        Icon(
-            painter = painterResource(placeIconOption(place.iconKey).icon),
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onErrorContainer,
-            modifier = Modifier.size(16.dp)
-        )
-        Spacer(Modifier.width(4.dp))
-        Text(
-            text = place.name,
-            color = MaterialTheme.colorScheme.onErrorContainer,
-            style = MaterialTheme.typography.labelMedium
-        )
     }
 }
 

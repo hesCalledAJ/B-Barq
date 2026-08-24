@@ -7,7 +7,7 @@ import com.aliJafari.bbarq.data.model.Place
 import com.aliJafari.bbarq.utils.BillIDNot13Chars
 import com.aliJafari.bbarq.utils.BillIDNotFoundException
 import com.aliJafari.bbarq.utils.RequestUnsuccessful
-import com.aliJafari.bbarq.utils.correctOutageTimes
+import com.aliJafari.bbarq.utils.fixTimeEdgeCases
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -56,7 +56,7 @@ class OutageRepository(val context: Context) {
                     val json = JSONObject(body)
                     return parseApiResponse(json.toString()).data.map {
                         it.toOutage(billId)
-                    }.map { correctOutageTimes(it) }
+                    }.map { fixTimeEdgeCases(it) }
                 } else {
                     throw RequestUnsuccessful(null, response.message)
                 }
@@ -135,4 +135,14 @@ data class ApiResponseOutageModel(
     val outageNumber: Int,
     val trackingCode : Int
 )
-fun ApiResponseOutageModel.toOutage(billId:String) = Outage(outageNumber,reasonOutage,outageDate,outageStartTime,outageStopTime,billId,address)
+
+fun ApiResponseOutageModel.toOutage(billId: String) = Outage(
+    outageNumber,
+    reasonOutage,
+    outageDate,
+    outageTime,
+    outageStartTime,
+    outageStopTime,
+    billId,
+    address
+)

@@ -96,4 +96,6 @@
     <string name="today">امروز</string>
     <string name="update_available_title">نسخه جدید در دسترس است</string>
     <string name="update_button">بروزرسانی</string>
+    <string name="all">همه</string>
+    <string name="version">نسخه :‌V%s</string>
 </resources>
